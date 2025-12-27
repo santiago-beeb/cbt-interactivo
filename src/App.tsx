@@ -1,11 +1,16 @@
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
 import Escenario from "./components/Escenario";
+import PartesMaquina from "./Pages/PartesMaquina/PartesMaquina";
 
 function App() {
   return (
-    <>
-      <Escenario />
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Escenario />} />
+        <Route path="/partes-maquina" element={<PartesMaquina />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

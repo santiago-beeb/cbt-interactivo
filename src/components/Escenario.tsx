@@ -1,4 +1,7 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import "./Escenario.css";
+
 import fabrica from "../assets/fabrica.png";
 import successSound from "../assets/sounds/success.mp3";
 import errorSound from "../assets/sounds/error.mp3";
@@ -16,7 +19,7 @@ type DangerZone = {
 };
 
 /* =======================
-   DATOS (PELIGROS)
+   DATOS
 ======================= */
 const dangers: DangerZone[] = [
   {
@@ -64,13 +67,17 @@ export default function Escenario() {
   );
   const [found, setFound] = useState<string[]>([]);
   const [shake, setShake] = useState(false);
-  const [completed, setCompleted] = useState(false);
+  const [mostrarFinal, setMostrarFinal] = useState(false);
+
+  const navigate = useNavigate();
 
   const successAudio = useRef(new Audio(successSound));
   const errorAudio = useRef(new Audio(errorSound));
 
+  const actividadCompleta = found.length === dangers.length;
+
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (completed) return;
+    if (mostrarFinal) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = ((e.clientX - rect.left) / rect.width) * 100;
@@ -82,62 +89,39 @@ export default function Escenario() {
 
     if (dangerFound) {
       if (found.includes(dangerFound.id)) {
-        setFeedback(
-          "⚠️ Este riesgo ya fue identificado. Continúa observando el área."
-        );
+        setFeedback("⚠️ Este riesgo ya fue identificado.");
         return;
       }
 
       successAudio.current.currentTime = 0;
       successAudio.current.play();
 
-      const updatedFound = [...found, dangerFound.id];
-      setFound(updatedFound);
-
+      setFound([...found, dangerFound.id]);
       setFeedback(`✅ ${dangerFound.message}\n\n${dangerFound.explanation}`);
-
-      if (updatedFound.length === dangers.length) {
-        setCompleted(true);
-      }
     } else {
       errorAudio.current.currentTime = 0;
       errorAudio.current.play();
 
-      setFeedback(
-        "❌ Este punto no representa un riesgo en este escenario. Continúa observando el área."
-      );
+      setFeedback("❌ Este punto no representa un riesgo.");
       setShake(true);
       setTimeout(() => setShake(false), 400);
     }
   };
 
   return (
-    <div>
+    <div className="escenario-container">
       {/* ENUNCIADO */}
-      <div>
-        <strong>🛡️ Identificación de Riesgos en el Área de Trabajo</strong>
-        <p style={{ marginTop: "6px" }}>
-          Observa la imagen y marca los lugares que representen un riesgo para
-          la seguridad.
-        </p>
+      <div className="escenario-header">
+        <strong>🛡️ Identificación de Riesgos</strong>
+        <p>Observa la imagen y marca los lugares peligrosos.</p>
       </div>
 
       {/* ESCENARIO */}
       <div
+        className={`escenario-imagen ${shake ? "shake" : ""}`}
         onClick={handleClick}
-        className={shake ? "shake" : ""}
-        style={{
-          position: "relative",
-          width: "800px",
-          cursor: completed ? "default" : "crosshair",
-          userSelect: "none",
-        }}
       >
-        <img
-          src={fabrica}
-          alt="Fábrica"
-          style={{ width: "100%", display: "block" }}
-        />
+        <img src={fabrica} alt="Fábrica" />
 
         {/* MARCADORES */}
         {dangers.map(
@@ -145,79 +129,53 @@ export default function Escenario() {
             found.includes(danger.id) && (
               <div
                 key={danger.id}
-                className="pulse"
+                className="marcador pulse"
                 style={{
-                  position: "absolute",
                   left: `${danger.x}%`,
                   top: `${danger.y}%`,
                   width: `${danger.radius * 2}%`,
                   height: `${danger.radius * 2}%`,
-                  border: "3px solid lime",
-                  borderRadius: "50%",
-                  transform: "translate(-50%, -50%)",
-                  pointerEvents: "none",
                 }}
               />
             )
         )}
 
         {/* CONTADOR */}
-        <div
-          style={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            background: "#000",
-            color: "white",
-            padding: "6px 10px",
-            borderRadius: "6px",
-          }}
-        >
+        <div className="contador">
           {found.length} / {dangers.length}
         </div>
       </div>
 
       {/* FEEDBACK */}
-      <div
-        style={{
-          marginTop: "12px",
-          padding: "12px",
-          background: "#222",
-          color: "white",
-          borderRadius: "8px",
-          whiteSpace: "pre-line",
-        }}
-      >
+      <div className="feedback">
         {feedback}
 
-        {completed && (
-          <div style={{ marginTop: "12px", textAlign: "right" }}>
-            <button
-              onClick={() =>
-                setFeedback(
-                  "🎉 Actividad completada\n\n" +
-                    "Has identificado correctamente todos los riesgos presentes en el área.\n\n" +
-                    "• Derrames de líquidos: pueden causar resbalones.\n" +
-                    "• Pisos sucios o desordenados: aumentan el riesgo de caídas.\n" +
-                    "• Máquinas averiadas: pueden provocar accidentes graves.\n\n" +
-                    "Reconocer los peligros es el primer paso para prevenir accidentes y proteger tu vida y la de tus compañeros."
-                )
-              }
-              style={{
-                padding: "8px 14px",
-                background: "#4caf50",
-                border: "none",
-                borderRadius: "6px",
-                color: "white",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
-            >
-              Continuar
-            </button>
+        {actividadCompleta && !mostrarFinal && (
+          <div className="acciones">
+            <button onClick={() => setMostrarFinal(true)}>Continuar</button>
           </div>
         )}
       </div>
+
+      {/* FINAL */}
+      {mostrarFinal && (
+        <>
+          <div className="final">
+            🎉 <strong>Actividad completada</strong>
+            {"\n\n"}Has identificado correctamente todos los riesgos.
+          </div>
+
+          <button
+            className="btn-siguiente"
+            onClick={() => {
+              localStorage.setItem("modulo_riesgos", "completado");
+              navigate("/partes-maquina");
+            }}
+          >
+            ▶ Ir a la siguiente actividad
+          </button>
+        </>
+      )}
     </div>
   );
 }
